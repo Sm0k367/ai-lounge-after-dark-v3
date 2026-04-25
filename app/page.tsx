@@ -36,6 +36,7 @@ export default function AILoungeAfterDark() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const visualizerBars = useRef<(HTMLDivElement | null)[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const vortexCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Real Web Audio API visualizer (replaces previous fake interval animation)
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -43,6 +44,11 @@ export default function AILoungeAfterDark() {
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
+
+  // Vortex portal system - swirling tunnel that builds with music into neon dreamscape
+  const particlesRef = useRef<any[]>([]);
+  const [vortexIntensity, setVortexIntensity] = useState(0);
+  const [portalOpen, setPortalOpen] = useState(false);
 
   const currentTrack = tracks[currentTrackIndex];
 
@@ -197,6 +203,18 @@ export default function AILoungeAfterDark() {
       case 'STOP':
         if (isPlaying) togglePlay();
         break;
+      case 'VORTEX':
+      case 'PORTAL':
+      case 'VOID':
+      case 'OPEN':
+        setPortalOpen(true);
+        setTimeout(() => setPortalOpen(false), 4200); // Dramatic portal moment
+        if (Math.random() > 0.5) {
+          const randomRealm = realms[Math.floor(Math.random() * realms.length)].name;
+          enterRealm(randomRealm);
+        }
+        console.log('🌌 The vortex opens — reality blurs...');
+        break;
       default:
         // Oracle can describe any action creatively
         console.log(`Oracle invoked powerful action: ${action}(${value})`);
@@ -251,6 +269,16 @@ export default function AILoungeAfterDark() {
     const bars = 12;
     const bufferLength = dataArrayRef.current.length;
 
+    // Calculate audio energy for vortex intensity (bass = crescendo)
+    let bassEnergy = 0;
+    for (let i = 0; i < 8; i++) {
+      bassEnergy += dataArrayRef.current[i] || 0;
+    }
+    bassEnergy = Math.min(1, (bassEnergy / (8 * 255)) * 1.8);
+    
+    const currentIntensity = Math.max(vortexIntensity, bassEnergy);
+    setVortexIntensity(currentIntensity);
+
     visualizerBars.current.forEach((bar, i) => {
       if (!bar) return;
 
@@ -272,7 +300,133 @@ export default function AILoungeAfterDark() {
       bar.style.opacity = Math.max(0.6, intensity).toString();
     });
 
+    // Draw the vortex portal (swirling tunnel into the digital void)
+    drawVortex(currentIntensity);
+
     animationFrameRef.current = requestAnimationFrame(drawVisualizer);
+  };
+
+  // Particle for the vortex tunnel
+  interface VortexParticle {
+    x: number;
+    y: number;
+    angle: number;
+    radius: number;
+    speed: number;
+    size: number;
+    alpha: number;
+    hue: number;
+  }
+
+  const drawVortex = (intensity: number) => {
+    const canvas = vortexCanvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // Resize canvas to match window
+    if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    // Clear with slight trail for ethereal glow
+    ctx.fillStyle = 'rgba(5, 5, 7, 0.12)';
+    ctx.fillRect(0, 0, width, height);
+
+    // Initialize particles if needed
+    if (particlesRef.current.length === 0) {
+      for (let i = 0; i < 180; i++) {
+        particlesRef.current.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          angle: Math.random() * Math.PI * 2,
+          radius: 50 + Math.random() * Math.max(width, height) * 0.6,
+          speed: 0.8 + Math.random() * 2.2,
+          size: 1.5 + Math.random() * 3,
+          alpha: 0.3 + Math.random() * 0.7,
+          hue: 170 + Math.random() * 80, // cyan to magenta range
+        });
+      }
+    }
+
+    const particleCount = Math.floor(60 + intensity * 160);
+    const swirlSpeed = 0.015 + intensity * 0.085;
+    const pullStrength = 0.965 - intensity * 0.028; // stronger pull during crescendo
+
+    ctx.shadowBlur = 18 + intensity * 26;
+    ctx.lineWidth = 1.5;
+
+    for (let i = 0; i < Math.min(particleCount, particlesRef.current.length); i++) {
+      const p = particlesRef.current[i];
+
+      // Spiral inward movement (the "pull into the digital void")
+      p.angle += swirlSpeed * (0.6 + intensity);
+      p.radius *= pullStrength;
+
+      // Convert polar to cartesian with perspective
+      const px = centerX + Math.cos(p.angle) * p.radius * (0.6 + intensity * 0.6);
+      const py = centerY + Math.sin(p.angle) * p.radius * 0.5 + (p.radius * 0.2 * Math.sin(p.angle * 3)); // slight wobble for depth
+
+      // Reset particle when it reaches the center (continuous flow)
+      if (p.radius < 20) {
+        p.radius = Math.max(width, height) * 0.7;
+        p.angle = Math.random() * Math.PI * 2;
+        p.alpha = 0.6 + Math.random() * 0.4;
+      }
+
+      // Dynamic neon color shifting with intensity and realm
+      const baseHue = currentRealm ? 
+        (currentRealm.includes('ABYSS') ? 260 : currentRealm.includes('VOID') ? 200 : 170) : 
+        p.hue;
+      const hue = (baseHue + intensity * 40) % 360;
+
+      ctx.shadowColor = `hsla(${hue}, 100%, 85%, ${p.alpha * intensity})`;
+      ctx.fillStyle = `hsla(${hue}, 100%, 92%, ${p.alpha})`;
+
+      // Draw particle with size reacting to intensity
+      const drawSize = p.size * (0.8 + intensity * 1.4);
+      ctx.beginPath();
+      ctx.arc(px, py, drawSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw spiral trail for "labyrinth of light and shadow"
+      if (i % 7 === 0 && intensity > 0.4) {
+        ctx.strokeStyle = `hsla(${hue}, 90%, 75%, ${0.15 * intensity})`;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(
+          centerX + Math.cos(p.angle - 0.8) * (p.radius * 1.1),
+          centerY + Math.sin(p.angle - 0.8) * (p.radius * 0.6)
+        );
+        ctx.stroke();
+      }
+    }
+
+    // Central portal glow - the "gateway to other realms"
+    if (intensity > 0.55 || portalOpen) {
+      const gradient = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, 180 + intensity * 120);
+      gradient.addColorStop(0, 'rgba(255, 240, 255, 0.9)');
+      gradient.addColorStop(0.4, 'rgba(180, 100, 255, 0.35)');
+      gradient.addColorStop(1, 'rgba(80, 0, 255, 0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 90 + intensity * 70, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Reality blur effect at peak
+      if (intensity > 0.75) {
+        ctx.fillStyle = `rgba(157, 0, 255, ${0.12 * (intensity - 0.7)})`;
+        ctx.fillRect(0, 0, width, height);
+      }
+    }
   };
 
   // Visualizer orchestration effect
@@ -358,7 +512,24 @@ export default function AILoungeAfterDark() {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      particlesRef.current = [];
     };
+  }, []);
+
+  // Vortex canvas setup and resize handler
+  useEffect(() => {
+    const canvas = vortexCanvasRef.current;
+    if (!canvas) return;
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => window.removeEventListener('resize', resizeCanvas);
   }, []);
 
   const enterRealm = (realmName: string) => {
@@ -389,6 +560,11 @@ export default function AILoungeAfterDark() {
 
   return (
     <div className="min-h-screen bg-[#050507] text-white overflow-hidden relative">
+      {/* Vortex Portal Canvas - swirling tunnel that builds into neon dreamscape */}
+      <canvas
+        ref={vortexCanvasRef}
+        className="vortex-canvas fixed inset-0 pointer-events-none z-0"
+      />
       {/* Enhanced CRT Effects */}
       <div className="vignette" />
       <div className="scanlines fixed inset-0 pointer-events-none z-50" />
