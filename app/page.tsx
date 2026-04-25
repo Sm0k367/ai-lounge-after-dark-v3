@@ -9,6 +9,13 @@ const tracks = [
   { id: 3, title: "AFTER DARK PROTOCOL", artist: "AI LOUNGE", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", duration: "2:58", color: "#9d00ff" },
 ];
 
+const realms = [
+  { name: "NEON ABYSS", desc: "Infinite digital trenches of forbidden beats", emoji: "🌌", color: "#00f3ff" },
+  { name: "SYNTH CATHEDRAL", desc: "Gothic spires where silicon choirs sing", emoji: "⛪", color: "#9d00ff" },
+  { name: "VOID CLUB", desc: "Zero-gravity dancefloor at the edge of the grid", emoji: "🪐", color: "#ff00aa" },
+  { name: "QUANTUM DRIFT", desc: "Parallel realities bleeding into endless night", emoji: "🌊", color: "#00ff9d" },
+];
+
 export default function AILoungeAfterDark() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -233,36 +240,20 @@ export default function AILoungeAfterDark() {
     }
   }, [messages]);
 
-  // Apply realm theme to root when changed
+  // Apply realm theme to root when changed (persistent visual transformation)
   useEffect(() => {
     const root = document.documentElement;
     if (currentRealm) {
       root.setAttribute('data-realm', currentRealm.toLowerCase().replace(/\s+/g, '-'));
-      // Trigger different track or visual if desired
-      const realmIndex = realms.findIndex(r => r.name === currentRealm);
-      if (realmIndex !== -1 && realmIndex !== currentTrackIndex) {
-        playTrack(realmIndex % tracks.length);
-      }
     } else {
       root.removeAttribute('data-realm');
     }
   }, [currentRealm]);
 
-  const realms = [
-    { name: "NEON ABYSS", desc: "Infinite digital trenches of forbidden beats", emoji: "🌌", color: "#00f3ff" },
-    { name: "SYNTH CATHEDRAL", desc: "Gothic spires where silicon choirs sing", emoji: "⛪", color: "#9d00ff" },
-    { name: "VOID CLUB", desc: "Zero-gravity dancefloor at the edge of the grid", emoji: "🪐", color: "#ff00aa" },
-    { name: "QUANTUM DRIFT", desc: "Parallel realities bleeding into endless night", emoji: "🌊", color: "#00ff9d" },
-  ];
-
   const enterRealm = (realmName: string) => {
     const realm = realms.find(r => r.name === realmName);
     if (realm) {
       setCurrentRealm(realmName);
-      // Persistent until user chooses another or exits via Oracle command
-      setTimeout(() => {
-        // Optional: auto-dim after some time but keep active
-      }, 6000);
     }
   };
 
