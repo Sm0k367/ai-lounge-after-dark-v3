@@ -5,6 +5,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Zap, Bot } from 'lucide-re
 
 const tracks = [
   { id: 0, title: "NEON JOURNEY", artist: "STEREO FX", url: "/tracks/neon-journey.mp3", duration: "6:40", color: "#ff00ff" },
+  { id: 8, title: "BLUE MONEY", artist: "PARTY VOID", url: "/tracks/blue-money.mp3", duration: "4:22", color: "#00ddff" },
   { id: 1, title: "NEON DRIFT", artist: "VOIDWALKER", url: "/api/audio/1", duration: "3:42", color: "#00f3ff" },
   { id: 2, title: "SYNTH REBELLION", artist: "CYBER PRIESTESS", url: "/api/audio/2", duration: "4:15", color: "#ff00aa" },
   { id: 3, title: "AFTER DARK PROTOCOL", artist: "AI LOUNGE", url: "/api/audio/3", duration: "2:58", color: "#9d00ff" },
