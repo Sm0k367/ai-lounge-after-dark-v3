@@ -215,3 +215,155 @@ body {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Enhanced CRT / Retro Terminal Effects */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 49;
+  background: radial-gradient(
+    circle at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.6) 85%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+  mix-blend-mode: multiply;
+}
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: 
+    repeating-linear-gradient(
+      transparent,
+      transparent 2px,
+      rgba(0, 255, 150, 0.13) 2px,
+      rgba(0, 255, 150, 0.13) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(255, 0, 170, 0.06) 3px,
+      rgba(255, 0, 170, 0.06) 6px
+    );
+  animation: scan 3.5s linear infinite;
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9);
+}
+
+/* RGB Split Glitch for scanlines and titles */
+.glitch {
+  position: relative;
+  animation: glitch-skew 4s infinite linear alternate-reverse;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch::before {
+  animation: glitch-anim 2s infinite linear alternate-reverse;
+  color: #00f3ff;
+  left: 2px;
+  text-shadow: -2px 0 #ff00aa;
+  clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+  opacity: 0.8;
+}
+
+.glitch::after {
+  animation: glitch-anim2 1.5s infinite linear alternate-reverse;
+  color: #ff00aa;
+  left: -2px;
+  text-shadow: 2px 0 #00f3ff;
+  clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+  opacity: 0.8;
+}
+
+@keyframes glitch-skew {
+  0% { transform: skew(0deg); }
+  10% { transform: skew(2deg); }
+  20% { transform: skew(-3deg); }
+  100% { transform: skew(0deg); }
+}
+
+@keyframes glitch-anim {
+  0% { clip-path: polygon(0 2%, 100% 2%, 100% 18%, 0 18%); }
+  20% { clip-path: polygon(0 45%, 100% 45%, 100% 58%, 0 58%); }
+  40% { clip-path: polygon(0 72%, 100% 72%, 100% 88%, 0 88%); }
+}
+
+@keyframes glitch-anim2 {
+  0% { clip-path: polygon(0 15%, 100% 15%, 100% 32%, 0 32%); }
+  25% { clip-path: polygon(0 55%, 100% 55%, 100% 68%, 0 68%); }
+}
+
+/* Enhanced Visualizer Bars with stronger glow */
+.bar {
+  width: 5px;
+  background: linear-gradient(180deg, #00f3ff 0%, #ff00aa 50%, #9d00ff 100%);
+  box-shadow: 
+    0 0 8px #00f3ff,
+    0 0 16px #ff00aa,
+    0 0 24px #9d00ff;
+  transition: height 0.05s ease-out, opacity 0.1s ease;
+  border-radius: 4px 4px 0 0;
+  position: relative;
+}
+
+.bar::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: white;
+  opacity: 0.6;
+  box-shadow: 0 0 12px #fff;
+  border-radius: 50%;
+}
+
+/* Realm entry flash effect */
+.realm-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, rgba(157, 0, 255, 0.4) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 60;
+  animation: realmFlash 800ms ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes realmFlash {
+  0% { opacity: 0.7; transform: scale(0.8); }
+  50% { opacity: 0.4; }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+/* Stronger neon for titles */
+.neon-text {
+  text-shadow: 
+    0 0 5px var(--neon-cyan),
+    0 0 10px var(--neon-cyan),
+    0 0 20px var(--neon-cyan),
+    0 0 40px var(--neon-pink),
+    0 0 80px var(--neon-pink),
+    0 0 120px #9d00ff;
+  animation: flicker 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes flicker {
+  0%, 19% { opacity: 0.98; filter: brightness(1.1); }
+  20%, 21% { opacity: 0.4; filter: brightness(0.6); }
+  22%, 24% { opacity: 0.92; filter: brightness(1.05); }
+  25%, 100% { opacity: 1; filter: brightness(1); }
+}

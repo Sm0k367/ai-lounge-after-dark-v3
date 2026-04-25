@@ -2,8 +2,10 @@ import { Groq } from 'groq-sdk';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
+  let messages: any[] = [];
   try {
-    const { messages = [] } = await request.json();
+    const body = await request.json();
+    messages = body.messages || [];
 
     if (!messages.length) {
       return NextResponse.json({ error: 'Messages are required' }, { status: 400 });

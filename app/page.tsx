@@ -29,11 +29,18 @@ export default function AILoungeAfterDark() {
   const [inputValue, setInputValue] = useState('');
   const [isOracleLoading, setIsOracleLoading] = useState(false);
   const [currentRealm, setCurrentRealm] = useState<string | null>(null);
+  const [showRealmFlash, setShowRealmFlash] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const visualizerBars = useRef<(HTMLDivElement | null)[]>([]);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Real Web Audio API visualizer (replaces previous fake interval animation)
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
 
   const currentTrack = tracks[currentTrackIndex];
 
@@ -188,26 +195,105 @@ export default function AILoungeAfterDark() {
     }
   };
 
-  // Visualizer animation
+  // Real-time Web Audio API visualizer (replaces fake sine animation)
+  const initializeVisualizer = () => {
+    const audio = audioRef.current;
+    if (!audio || audioContextRef.current) return;
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContextClass();
+      audioContextRef.current = ctx;
+
+      const source = ctx.createMediaElementSource(audio);
+      const analyser = ctx.createAnalyser();
+      
+      analyser.fftSize = 128;
+      analyser.smoothingTimeConstant = 0.82;
+      
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+
+      sourceRef.current = source;
+      analyserRef.current = analyser;
+      // Create properly typed frequency data array (avoids SharedArrayBuffer TS issues)
+      dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+
+      // Resume context on user interaction (required by browsers)
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      console.log('🎵 Real audio visualizer initialized');
+    } catch (err) {
+      console.warn('Visualizer init failed (fallback to visual only):', err);
+    }
+  };
+
+  const drawVisualizer = () => {
+    if (!analyserRef.current || !dataArrayRef.current || !isPlaying) {
+      animationFrameRef.current = requestAnimationFrame(drawVisualizer);
+      return;
+    }
+
+    const analyser = analyserRef.current;
+    // @ts-ignore - Web Audio Uint8Array typing edge case with strict lib checks
+    analyser.getByteFrequencyData(dataArrayRef.current!);
+
+    const bars = 12;
+    const bufferLength = dataArrayRef.current.length;
+
+    visualizerBars.current.forEach((bar, i) => {
+      if (!bar) return;
+
+      // Focus on lower frequencies for punchy bass-driven look (cyberpunk feel)
+      const index = Math.floor((i * bufferLength) / (bars * 1.8));
+      let value = dataArrayRef.current![index] || 0;
+      
+      // Boost lower frequencies slightly for more dynamic movement
+      if (i < 5) value = Math.min(255, value * 1.35);
+      
+      const normalized = value / 255;
+      const height = 14 + (normalized * normalized * 78); // quadratic for more dramatic peaks
+      
+      bar.style.height = `${Math.max(10, height)}px`;
+      
+      // Dynamic color intensity based on energy
+      const intensity = Math.min(1, normalized * 1.6);
+      bar.style.background = `linear-gradient(to top, #00f3ff, #ff00aa, #9d00ff)`;
+      bar.style.opacity = Math.max(0.6, intensity).toString();
+    });
+
+    animationFrameRef.current = requestAnimationFrame(drawVisualizer);
+  };
+
+  // Visualizer orchestration effect
   useEffect(() => {
     if (isPlaying) {
-      intervalRef.current = setInterval(() => {
-        visualizerBars.current.forEach((bar, i) => {
-          if (bar) {
-            const height = 20 + Math.sin(Date.now() / 200 + i) * 25 + Math.random() * 15;
-            bar.style.height = `${Math.max(8, height)}px`;
-          }
-        });
-      }, 80);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+      initializeVisualizer();
+      if (!animationFrameRef.current) {
+        animationFrameRef.current = requestAnimationFrame(drawVisualizer);
+      }
+    } else {
+      // Reset bars when paused
       visualizerBars.current.forEach(bar => {
-        if (bar) bar.style.height = '12px';
+        if (bar) {
+          bar.style.height = '14px';
+          bar.style.opacity = '0.7';
+        }
       });
+      
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
     }
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
     };
   }, [isPlaying]);
 
@@ -258,15 +344,34 @@ export default function AILoungeAfterDark() {
     const realm = realms.find(r => r.name === realmName);
     if (realm) {
       setCurrentRealm(realmName);
+      setShowRealmFlash(true);
+      // Auto-hide flash after animation
+      setTimeout(() => setShowRealmFlash(false), 900);
+      
+      // Optional: change track to something thematic when entering realm
+      if (realmName.includes('ABYSS') || realmName.includes('VOID')) {
+        playTrack(2); // AFTER DARK PROTOCOL
+      } else if (realmName.includes('CATHEDRAL')) {
+        playTrack(5);
+      } else if (realmName.includes('CLUB')) {
+        playTrack(1);
+      } else {
+        playTrack(4);
+      }
     }
   };
 
-  const exitRealm = () => setCurrentRealm(null);
+  const exitRealm = () => {
+    setCurrentRealm(null);
+    setShowRealmFlash(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#050507] text-white overflow-hidden relative">
-      {/* Scanlines */}
+      {/* Enhanced CRT Effects */}
+      <div className="vignette" />
       <div className="scanlines fixed inset-0 pointer-events-none z-50" />
+      {showRealmFlash && <div className="realm-flash" />}
 
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-cyan-400/30">
@@ -275,7 +380,7 @@ export default function AILoungeAfterDark() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-pink-500 flex items-center justify-center">
               <Zap className="w-5 h-5 text-black" />
             </div>
-            <div className="text-2xl font-bold tracking-[3px] neon-text">AI LOUNGE</div>
+            <div className="text-2xl font-bold tracking-[3px] neon-text glitch" data-text="AI LOUNGE">AI LOUNGE</div>
           </div>
           
           <div className="flex gap-10 text-sm uppercase tracking-widest font-medium">
@@ -288,13 +393,13 @@ export default function AILoungeAfterDark() {
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* HERO with enhanced glitch title */}
       <section className="min-h-screen flex items-center justify-center pt-16 relative">
         <div className="text-center z-10 px-6">
-          <div className="mb-6 inline-block px-6 py-2 glass rounded-full text-xs tracking-[4px] border border-pink-400/50">
+          <div className="mb-6 inline-block px-6 py-2 glass rounded-full text-xs tracking-[4px] border border-pink-400/50 glitch" data-text="TRANSMISSION LIVE • 04:20 AM">
             TRANSMISSION LIVE • 04:20 AM
           </div>
-          <h1 className="text-[110px] leading-[90px] font-black tracking-[-6px] neon-text mb-8">
+          <h1 className="text-[110px] leading-[90px] font-black tracking-[-6px] neon-text glitch" data-text="AFTER DARK">
             AFTER<br />DARK
           </h1>
           <p className="text-3xl text-cyan-300 max-w-xl mx-auto mb-12">
@@ -316,10 +421,10 @@ export default function AILoungeAfterDark() {
       <section id="lounge" className="max-w-6xl mx-auto px-6 py-20 border-t border-white/10">
         <div className="flex justify-between items-baseline mb-12">
           <div>
-            <div className="text-pink-400 text-sm tracking-[4px]">MAINFRAME BROADCAST</div>
-            <div className="text-6xl font-bold neon-pink">THE LOUNGE</div>
+            <div className="text-pink-400 text-sm tracking-[4px] glitch" data-text="MAINFRAME BROADCAST">MAINFRAME BROADCAST</div>
+            <div className="text-6xl font-bold neon-pink glitch" data-text="THE LOUNGE">THE LOUNGE</div>
           </div>
-          <div className="text-right text-xs text-cyan-400 font-mono">NODE-77 • LIVE</div>
+          <div className="text-right text-xs text-cyan-400 font-mono glitch" data-text="NODE-77 • LIVE">NODE-77 • LIVE</div>
         </div>
 
         <div className="glass rounded-3xl p-12">
@@ -422,8 +527,8 @@ export default function AILoungeAfterDark() {
       <section id="realms" className="py-20 bg-black/70 border-t border-b border-white/10">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <div className="text-purple-400 text-sm tracking-widest">DIMENSIONAL GATEWAYS</div>
-            <div className="text-6xl font-bold neon-text mt-2">THE REALMS</div>
+            <div className="text-purple-400 text-sm tracking-widest glitch" data-text="DIMENSIONAL GATEWAYS">DIMENSIONAL GATEWAYS</div>
+            <div className="text-6xl font-bold neon-text glitch mt-2" data-text="THE REALMS">THE REALMS</div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -446,9 +551,9 @@ export default function AILoungeAfterDark() {
       {/* ORACLE - Full persistent chat with unlimited context and action capabilities */}
       <section id="oracle" className="max-w-4xl mx-auto px-6 py-28">
         <div className="text-center mb-12">
-          <div className="text-6xl mb-6">🜁</div>
-          <div className="text-purple-400 tracking-[3px] text-sm mb-2">NEURAL INTERFACE v1.0 • OMNIPOTENT GROQ LLAMA 3.3-70B</div>
-          <h2 className="text-6xl font-bold neon-text">THE ORACLE</h2>
+          <div className="text-6xl mb-6 glitch" data-text="🜁">🜁</div>
+          <div className="text-purple-400 tracking-[3px] text-sm mb-2 glitch" data-text="NEURAL INTERFACE v1.0 • OMNIPOTENT GROQ LLAMA 3.3-70B">NEURAL INTERFACE v1.0 • OMNIPOTENT GROQ LLAMA 3.3-70B</div>
+          <h2 className="text-6xl font-bold neon-text glitch" data-text="THE ORACLE">THE ORACLE</h2>
           <p className="mt-4 text-xl text-white/70">Speak your desire into the neon void. The Oracle remembers everything and can do anything.</p>
         </div>
 
@@ -505,26 +610,32 @@ export default function AILoungeAfterDark() {
         </div>
       </section>
 
-      {/* Improved Realm Modal - now tied to persistent currentRealm with exit */}
+      {/* Immersive Realm Modal with enhanced effects */}
       {currentRealm && (
         <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[100] p-6 backdrop-blur-xl">
-          <div className="glass max-w-md w-full p-12 rounded-3xl text-center border border-purple-400 relative">
+          <div className="glass max-w-md w-full p-12 rounded-3xl text-center border border-purple-400 relative overflow-hidden">
             <button 
               onClick={exitRealm}
-              className="absolute top-6 right-6 text-white/50 hover:text-white text-xl leading-none"
+              className="absolute top-6 right-6 text-white/50 hover:text-white text-xl leading-none z-10"
             >
               ✕
             </button>
-            <div className="text-8xl mb-8 transition-transform">🌌</div>
-            <div className="text-4xl font-bold neon-text mb-6">NOW IN<br />{currentRealm}</div>
+            
+            {/* Realm specific visual accent */}
+            <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 to-transparent pointer-events-none" />
+            
+            <div className="text-8xl mb-8 transition-transform group-hover:scale-110">🌌</div>
+            <div className="text-4xl font-bold neon-text glitch mb-6" data-text={`NOW IN ${currentRealm}`}>
+              NOW IN<br />{currentRealm}
+            </div>
             <div className="text-lg text-purple-300 mb-10 leading-relaxed">
               The frequency has shifted.<br />
               Neon realities have unfolded around you.<br />
-              The Oracle can command further changes.
+              <span className="text-cyan-400">The Oracle controls this domain.</span>
             </div>
             <div 
               onClick={exitRealm}
-              className="cursor-pointer text-xs font-mono text-white/50 tracking-widest border border-white/30 hover:border-purple-400 px-8 py-4 inline-block transition-colors"
+              className="cursor-pointer text-xs font-mono text-white/50 tracking-widest border border-white/30 hover:border-purple-400 px-8 py-4 inline-block transition-all hover:bg-purple-500/10 active:scale-95"
             >
               RETURN TO THE LOUNGE →
             </div>
