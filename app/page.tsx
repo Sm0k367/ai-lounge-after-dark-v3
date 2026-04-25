@@ -7,6 +7,10 @@ const tracks = [
   { id: 1, title: "NEON DRIFT", artist: "VOIDWALKER", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", duration: "3:42", color: "#00f3ff" },
   { id: 2, title: "SYNTH REBELLION", artist: "CYBER PRIESTESS", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-16.mp3", duration: "4:15", color: "#ff00aa" },
   { id: 3, title: "AFTER DARK PROTOCOL", artist: "AI LOUNGE", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", duration: "2:58", color: "#9d00ff" },
+  { id: 4, title: "CHROME REQUIEM", artist: "NEON SERAPH", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", duration: "3:12", color: "#ff0088" },
+  { id: 5, title: "DIGITAL PHANTOM", artist: "VOIDWALKER", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3", duration: "4:01", color: "#00ffcc" },
+  { id: 6, title: "QUANTUM FUGUE", artist: "CYBER PRIESTESS", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3", duration: "5:23", color: "#aa00ff" },
+  { id: 7, title: "VOID TRANSMISSION", artist: "AI LOUNGE", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-18.mp3", duration: "3:55", color: "#00aaff" },
 ];
 
 const realms = [
