@@ -44,7 +44,7 @@ export default function AILoungeAfterDark() {
 
   const currentTrack = tracks[currentTrackIndex];
 
-  const togglePlay = async () => {
+   const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -55,6 +55,8 @@ export default function AILoungeAfterDark() {
       } else {
         await audio.play();
         setIsPlaying(true);
+        // Initialize visualizer on successful user gesture
+        setTimeout(initializeVisualizer, 50);
       }
     } catch (error) {
       // Ignore AbortError (common when play/pause race) and other user-gesture issues
@@ -65,7 +67,8 @@ export default function AILoungeAfterDark() {
     }
   };
 
-  const playTrack = async (index: number) => {
+
+   const playTrack = async (index: number) => {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -83,6 +86,8 @@ export default function AILoungeAfterDark() {
       if (playPromise) {
         await playPromise;
         setIsPlaying(true);
+        // Initialize visualizer tied to this user gesture for reliable AudioContext
+        setTimeout(initializeVisualizer, 50);
       }
     } catch (error) {
       if ((error as Error).name !== 'AbortError') {
@@ -91,6 +96,7 @@ export default function AILoungeAfterDark() {
       setIsPlaying(false);
     }
   };
+
 
   const nextTrack = async () => {
     const nextIndex = (currentTrackIndex + 1) % tracks.length;
@@ -232,7 +238,7 @@ export default function AILoungeAfterDark() {
 
   const drawVisualizer = () => {
     if (!analyserRef.current || !dataArrayRef.current || !isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(drawVisualizer);
+      animationFrameRef.current = null;
       return;
     }
 
@@ -339,6 +345,19 @@ export default function AILoungeAfterDark() {
       root.removeAttribute('data-realm');
     }
   }, [currentRealm]);
+
+  // Cleanup AudioContext on unmount
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(console.warn);
+        audioContextRef.current = null;
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   const enterRealm = (realmName: string) => {
     const realm = realms.find(r => r.name === realmName);
@@ -647,7 +666,11 @@ export default function AILoungeAfterDark() {
         AI LOUNGE AFTER DARK v3 • GROQ LLAMA-3.3-70B • SIMPLE NEXT.JS ON VERCEL
       </footer>
 
-      <audio ref={audioRef} />
+      <audio 
+        ref={audioRef} 
+        crossOrigin="anonymous" 
+        preload="metadata"
+      />
     </div>
   );
 }
