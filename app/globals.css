@@ -136,3 +136,82 @@ body {
 .neon-button:hover::before {
   left: 200%;
 }
+
+/* Oracle Chat UI - full history, scrollable, supports any length */
+.oracle-chat {
+  max-height: 420px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #00f3ff #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 8px;
+}
+
+.oracle-chat::-webkit-scrollbar {
+  width: 6px;
+}
+
+.oracle-chat::-webkit-scrollbar-thumb {
+  background: linear-gradient(#00f3ff, #ff00aa);
+  border-radius: 20px;
+}
+
+.message {
+  max-width: 85%;
+  padding: 14px 18px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  position: relative;
+  animation: fadeIn 0.3s ease;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.user-message {
+  align-self: flex-end;
+  background: rgba(157, 0, 255, 0.25);
+  border: 1px solid #9d00ff;
+  border-bottom-right-radius: 4px;
+  color: #fff;
+}
+
+.oracle-message {
+  align-self: flex-start;
+  background: rgba(0, 243, 255, 0.15);
+  border: 1px solid #00f3ff;
+  border-bottom-left-radius: 4px;
+  color: #e0f8ff;
+  font-style: italic;
+}
+
+/* Realm themes - clicking realms now actually transforms the entire experience */
+:root[data-realm="neon-abyss"] {
+  --neon-cyan: #00f3ff;
+  --neon-pink: #ff0088;
+  background: linear-gradient(180deg, #050507 0%, #0a001f 100%) !important;
+}
+
+:root[data-realm="synth-cathedral"] {
+  --neon-cyan: #9d00ff;
+  --neon-pink: #ff00cc;
+  background: linear-gradient(180deg, #0f001a 0%, #1a0022 100%) !important;
+}
+
+:root[data-realm="void-club"] {
+  --neon-cyan: #ff00aa;
+  --neon-pink: #00ffdd;
+  background: linear-gradient(180deg, #000011 0%, #110022 100%) !important;
+}
+
+:root[data-realm="quantum-drift"] {
+  --neon-cyan: #00ff9d;
+  --neon-pink: #00aaff;
+  background: linear-gradient(180deg, #001122 0%, #002211 100%) !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

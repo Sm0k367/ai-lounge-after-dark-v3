@@ -14,13 +14,15 @@ export default function AILoungeAfterDark() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(0.75);
-  const [oraclePrompt, setOraclePrompt] = useState('');
-  const [oracleResponse, setOracleResponse] = useState('');
+  const [messages, setMessages] = useState<{id: string; role: 'user' | 'oracle'; content: string}[]>([]);
+  const [inputValue, setInputValue] = useState('');
   const [isOracleLoading, setIsOracleLoading] = useState(false);
+  const [currentRealm, setCurrentRealm] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const visualizerBars = useRef<(HTMLDivElement | null)[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const currentTrack = tracks[currentTrackIndex];
 
@@ -96,26 +98,82 @@ export default function AILoungeAfterDark() {
     audio.currentTime = percent * audio.duration;
   };
 
-  const consultOracle = async () => {
-    if (!oraclePrompt.trim() || isOracleLoading) return;
+  const sendToOracle = async () => {
+    const trimmed = inputValue.trim();
+    if (!trimmed || isOracleLoading) return;
 
+    const userMessage = { id: Date.now().toString(), role: 'user' as const, content: trimmed };
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
     setIsOracleLoading(true);
-    setOracleResponse('');
 
     try {
       const res = await fetch('/api/oracle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: oraclePrompt }),
+        body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
       
       const data = await res.json();
-      setOracleResponse(data.response || "The neon is silent tonight...");
+      const oracleContent = data.response || "The neon is silent tonight...";
+
+      const oracleMessage = { 
+        id: (Date.now() + 1).toString(), 
+        role: 'oracle' as const, 
+        content: oracleContent 
+      };
+      
+      setMessages(prev => [...prev, oracleMessage]);
+
+      // Parse for special actions to make Oracle "able to do anything"
+      const actionMatch = oracleContent.match(/\[ACTION:(\w+):?([^|\]]+)?\]/i);
+      if (actionMatch) {
+        const [, actionType, value] = actionMatch;
+        executeOracleAction(actionType.toUpperCase(), value?.trim());
+      }
     } catch (error) {
-      setOracleResponse("The connection to the Oracle is lost in the static. Check your GROQ_API_KEY in Vercel environment variables.");
+      const errorMsg = "The connection to the Oracle is lost in the static. Check your GROQ_API_KEY in Vercel environment variables.";
+      setMessages(prev => [...prev, { 
+        id: (Date.now() + 1).toString(), 
+        role: 'oracle' as const, 
+        content: errorMsg 
+      }]);
     } finally {
       setIsOracleLoading(false);
-      setOraclePrompt('');
+    }
+  };
+
+  const executeOracleAction = (action: string, value?: string) => {
+    switch (action) {
+      case 'PLAY':
+        const trackIdx = parseInt(value || '0', 10) - 1;
+        if (!isNaN(trackIdx) && trackIdx >= 0 && trackIdx < tracks.length) {
+          playTrack(trackIdx);
+        }
+        break;
+      case 'ENTER_REALM':
+      case 'REALM':
+        const realmMatch = realms.find(r => 
+          r.name.toLowerCase().includes((value || '').toLowerCase())
+        );
+        if (realmMatch) enterRealm(realmMatch.name);
+        break;
+      case 'EXIT_REALM':
+      case 'EXIT':
+        exitRealm();
+        break;
+      case 'CHANGE_THEME':
+      case 'THEME':
+        if (value) {
+          document.documentElement.style.setProperty('--neon-cyan', value);
+        }
+        break;
+      case 'STOP':
+        if (isPlaying) togglePlay();
+        break;
+      default:
+        // Oracle can describe any action creatively
+        console.log(`Oracle invoked powerful action: ${action}(${value})`);
     }
   };
 
@@ -168,19 +226,47 @@ export default function AILoungeAfterDark() {
     if (audio) audio.volume = volume;
   }, [volume]);
 
-  const [selectedRealm, setSelectedRealm] = useState<string | null>(null);
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
 
-  const enterRealm = (realmName: string) => {
-    setSelectedRealm(realmName);
-    setTimeout(() => setSelectedRealm(null), 4000); // Auto close after 4s
-  };
+  // Apply realm theme to root when changed
+  useEffect(() => {
+    const root = document.documentElement;
+    if (currentRealm) {
+      root.setAttribute('data-realm', currentRealm.toLowerCase().replace(/\s+/g, '-'));
+      // Trigger different track or visual if desired
+      const realmIndex = realms.findIndex(r => r.name === currentRealm);
+      if (realmIndex !== -1 && realmIndex !== currentTrackIndex) {
+        playTrack(realmIndex % tracks.length);
+      }
+    } else {
+      root.removeAttribute('data-realm');
+    }
+  }, [currentRealm]);
 
   const realms = [
-    { name: "NEON ABYSS", desc: "Infinite digital trenches of forbidden beats", emoji: "🌌" },
-    { name: "SYNTH CATHEDRAL", desc: "Gothic spires where silicon choirs sing", emoji: "⛪" },
-    { name: "VOID CLUB", desc: "Zero-gravity dancefloor at the edge of the grid", emoji: "🪐" },
-    { name: "QUANTUM DRIFT", desc: "Parallel realities bleeding into endless night", emoji: "🌊" },
+    { name: "NEON ABYSS", desc: "Infinite digital trenches of forbidden beats", emoji: "🌌", color: "#00f3ff" },
+    { name: "SYNTH CATHEDRAL", desc: "Gothic spires where silicon choirs sing", emoji: "⛪", color: "#9d00ff" },
+    { name: "VOID CLUB", desc: "Zero-gravity dancefloor at the edge of the grid", emoji: "🪐", color: "#ff00aa" },
+    { name: "QUANTUM DRIFT", desc: "Parallel realities bleeding into endless night", emoji: "🌊", color: "#00ff9d" },
   ];
+
+  const enterRealm = (realmName: string) => {
+    const realm = realms.find(r => r.name === realmName);
+    if (realm) {
+      setCurrentRealm(realmName);
+      // Persistent until user chooses another or exits via Oracle command
+      setTimeout(() => {
+        // Optional: auto-dim after some time but keep active
+      }, 6000);
+    }
+  };
+
+  const exitRealm = () => setCurrentRealm(null);
 
   return (
     <div className="min-h-screen bg-[#050507] text-white overflow-hidden relative">
@@ -362,59 +448,90 @@ export default function AILoungeAfterDark() {
         </div>
       </section>
 
-      {/* ORACLE */}
+      {/* ORACLE - Full persistent chat with unlimited context and action capabilities */}
       <section id="oracle" className="max-w-4xl mx-auto px-6 py-28">
         <div className="text-center mb-12">
           <div className="text-6xl mb-6">🜁</div>
-          <div className="text-purple-400 tracking-[3px] text-sm mb-2">NEURAL INTERFACE v0.8 • POWERED BY GROQ + LLAMA 3</div>
+          <div className="text-purple-400 tracking-[3px] text-sm mb-2">NEURAL INTERFACE v1.0 • OMNIPOTENT GROQ LLAMA 3.3-70B</div>
           <h2 className="text-6xl font-bold neon-text">THE ORACLE</h2>
-          <p className="mt-4 text-xl text-white/70">Speak your desire into the neon void. The machines will answer.</p>
+          <p className="mt-4 text-xl text-white/70">Speak your desire into the neon void. The Oracle remembers everything and can do anything.</p>
         </div>
 
-        <div className="glass rounded-3xl p-10">
-          <div className="flex flex-col md:flex-row gap-8">
-            <div className="flex-1">
-              <textarea
-                value={oraclePrompt}
-                onChange={(e) => setOraclePrompt(e.target.value)}
-                placeholder="What visions do you seek in the neon haze?"
-                className="w-full h-52 bg-black/80 border border-purple-500/40 p-8 text-lg placeholder:text-white/40 focus:outline-none focus:border-purple-400 rounded-2xl resize-none font-light"
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), consultOracle())}
-              />
-              <button 
-                onClick={consultOracle}
-                disabled={isOracleLoading || !oraclePrompt.trim()}
-                className="mt-6 w-full py-6 text-lg font-mono tracking-widest border-2 border-purple-500 hover:bg-purple-500 hover:text-black disabled:opacity-40 transition-all rounded-2xl"
-              >
-                {isOracleLoading ? 'TRANSMITTING TO THE VOID...' : 'TRANSMIT TO THE ORACLE'}
-              </button>
-            </div>
+        <div className="glass rounded-3xl p-8">
+          {/* Chat History - shows EVERYTHING, scrolls, supports very long responses */}
+          <div 
+            ref={chatContainerRef}
+            className="oracle-chat mb-6 bg-black/80 border border-purple-500/30 rounded-2xl p-4 min-h-[380px] flex flex-col"
+          >
+            {messages.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-purple-400/50 italic text-center">
+                The void awaits your first transmission...<br />
+                Ask it to play music, enter a realm, change the theme, or manifest anything.
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div key={msg.id} className={`message ${msg.role === 'user' ? 'user-message' : 'oracle-message'}`}>
+                  {msg.content}
+                </div>
+              ))
+            )}
+            {isOracleLoading && (
+              <div className="oracle-message message">The neon currents swirl... the Oracle is transmitting...</div>
+            )}
+          </div>
 
-            <div className="flex-1 bg-black/80 border border-dashed border-purple-500/30 rounded-3xl p-10 flex flex-col">
-              <div className="uppercase text-xs text-purple-400 mb-6 tracking-widest">RESPONSE FROM BEYOND THE GRID</div>
-              <div className="flex-1 text-purple-100 text-[17px] leading-relaxed italic">
-                {oracleResponse || "The Oracle awaits your words..."}
-              </div>
-              <div className="text-[10px] text-purple-500/60 mt-8 pt-6 border-t border-purple-900 font-mono">
-                RESPONSES GENERATED BY GROQ LLAMA-3-8B • MAY CONTAIN PROPHECIES
-              </div>
-            </div>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendToOracle();
+                }
+              }}
+              placeholder="Command the void... (e.g. 'enter neon abyss', 'play track 2', 'change the theme')"
+              className="flex-1 bg-black/80 border border-purple-500/40 p-5 text-lg placeholder:text-white/40 focus:outline-none focus:border-purple-400 rounded-2xl font-light"
+              disabled={isOracleLoading}
+            />
+            <button 
+              onClick={sendToOracle}
+              disabled={isOracleLoading || !inputValue.trim()}
+              className="px-10 py-5 text-lg font-mono tracking-widest border-2 border-purple-500 hover:bg-purple-500 hover:text-black disabled:opacity-40 transition-all rounded-2xl whitespace-nowrap"
+            >
+              {isOracleLoading ? 'TRANSMITTING...' : 'TRANSMIT'}
+            </button>
+          </div>
+
+          <div className="text-[10px] text-purple-500/60 mt-6 pt-4 border-t border-purple-900 font-mono text-center">
+            FULL CONVERSATION HISTORY • ORACLE CAN EXECUTE COMMANDS • CONTEXT PRESERVED INDEFINITELY
           </div>
         </div>
       </section>
 
-      {/* Realm Modal */}
-      {selectedRealm && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-6">
-          <div className="glass max-w-md w-full p-12 rounded-3xl text-center border border-purple-400">
-            <div className="text-8xl mb-8">🌌</div>
-            <div className="text-4xl font-bold neon-text mb-6">ENTERING<br />{selectedRealm}</div>
-            <div className="text-lg text-purple-300 mb-10">
-              The frequency shifts...<br />
-              Neon realities unfold around you.
+      {/* Improved Realm Modal - now tied to persistent currentRealm with exit */}
+      {currentRealm && (
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[100] p-6 backdrop-blur-xl">
+          <div className="glass max-w-md w-full p-12 rounded-3xl text-center border border-purple-400 relative">
+            <button 
+              onClick={exitRealm}
+              className="absolute top-6 right-6 text-white/50 hover:text-white text-xl leading-none"
+            >
+              ✕
+            </button>
+            <div className="text-8xl mb-8 transition-transform">🌌</div>
+            <div className="text-4xl font-bold neon-text mb-6">NOW IN<br />{currentRealm}</div>
+            <div className="text-lg text-purple-300 mb-10 leading-relaxed">
+              The frequency has shifted.<br />
+              Neon realities have unfolded around you.<br />
+              The Oracle can command further changes.
             </div>
-            <div className="text-xs font-mono text-white/50 tracking-widest">
-              TRANSMISSION COMPLETE • RETURN TO THE LOUNGE
+            <div 
+              onClick={exitRealm}
+              className="cursor-pointer text-xs font-mono text-white/50 tracking-widest border border-white/30 hover:border-purple-400 px-8 py-4 inline-block transition-colors"
+            >
+              RETURN TO THE LOUNGE →
             </div>
           </div>
         </div>
