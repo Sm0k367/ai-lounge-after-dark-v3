@@ -47,6 +47,19 @@ export default function AILoungeAfterDark() {
     { id: 'ad', title: 'AI LOUNGE AD', url: '/videos/ai-lounge-ad.mp4', desc: 'Welcome to the lounge' },
   ];
 
+  // Core refs
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const visualizerBars = useRef<(HTMLDivElement | null)[]>([]);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const vortexCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Web Audio + Vortex refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const particlesRef = useRef<any[]>([]);
 
   const currentTrack = tracks[currentTrackIndex];
 
