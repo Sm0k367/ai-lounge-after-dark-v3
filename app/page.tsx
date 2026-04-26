@@ -36,23 +36,17 @@ export default function AILoungeAfterDark() {
   const [isOracleLoading, setIsOracleLoading] = useState(false);
   const [currentRealm, setCurrentRealm] = useState<string | null>(null);
   const [showRealmFlash, setShowRealmFlash] = useState(false);
-
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const visualizerBars = useRef<(HTMLDivElement | null)[]>([]);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const vortexCanvasRef = useRef<HTMLCanvasElement>(null);
-
-  // Real Web Audio API visualizer (replaces previous fake interval animation)
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
-
-  // Vortex portal system - swirling tunnel that builds with music into neon dreamscape
-  const particlesRef = useRef<any[]>([]);
   const [vortexIntensity, setVortexIntensity] = useState(0);
   const [portalOpen, setPortalOpen] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+
+  // Video streaming
+  const [currentVideo, setCurrentVideo] = useState('/videos/intro-tunnel.mp4');
+  const videos = [
+    { id: 'intro', title: 'INTRO TUNNEL', url: '/videos/intro-tunnel.mp4', desc: 'Warp into the digital void' },
+    { id: 'ad', title: 'AI LOUNGE AD', url: '/videos/ai-lounge-ad.mp4', desc: 'Welcome to the lounge' },
+  ];
+
 
   const currentTrack = tracks[currentTrackIndex];
 
@@ -588,6 +582,12 @@ export default function AILoungeAfterDark() {
             <a href="#lounge" className="hover:text-cyan-400 transition-colors">LOUNGE</a>
             <a href="#realms" className="hover:text-cyan-400 transition-colors">REALMS</a>
             <a href="#oracle" className="hover:text-cyan-400 transition-colors">ORACLE</a>
+            <button 
+              onClick={() => setShowVideoPlayer(true)}
+              className="hover:text-cyan-400 transition-colors border border-cyan-400/30 px-4 py-1 rounded hover:bg-cyan-400/10"
+            >
+              TRANSMISSION
+            </button>
           </div>
           
           <div className="text-xs font-mono text-cyan-400/70">v3 • GROQ POWERED</div>
@@ -839,6 +839,62 @@ export default function AILoungeAfterDark() {
               className="cursor-pointer text-xs font-mono text-white/50 tracking-widest border border-white/30 hover:border-purple-400 px-8 py-4 inline-block transition-all hover:bg-purple-500/10 active:scale-95"
             >
               RETURN TO THE LOUNGE →
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Streaming Player - LIVE TRANSMISSION */}
+      {showVideoPlayer && (
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[110] p-6 backdrop-blur-2xl">
+          <div className="glass max-w-5xl w-full rounded-3xl border border-cyan-400/50 relative overflow-hidden">
+            <button 
+              onClick={() => setShowVideoPlayer(false)}
+              className="absolute top-6 right-6 text-white/70 hover:text-white text-2xl leading-none z-20"
+            >
+              ✕
+            </button>
+
+            <div className="p-8">
+              <div className="flex gap-4 mb-6 border-b border-white/10 pb-4">
+                {videos.map((video) => (
+                  <button
+                    key={video.id}
+                    onClick={() => setCurrentVideo(video.url)}
+                    className={`px-8 py-3 rounded-2xl font-mono text-sm tracking-widest transition-all ${
+                      currentVideo === video.url 
+                        ? 'bg-cyan-400 text-black border border-cyan-400' 
+                        : 'border border-white/30 hover:border-cyan-400'
+                    }`}
+                  >
+                    {video.title}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative rounded-2xl overflow-hidden bg-black aspect-video shadow-2xl">
+                <video 
+                  key={currentVideo}
+                  src={currentVideo} 
+                  controls 
+                  autoPlay 
+                  className="w-full h-full"
+                  onPlay={() => {
+                    if (currentVideo.includes('intro-tunnel')) {
+                      setVortexIntensity(0.9);
+                      setPortalOpen(true);
+                      setTimeout(() => setPortalOpen(false), 3500);
+                    }
+                  }}
+                />
+                <div className="absolute top-4 left-4 bg-black/70 px-4 py-1 text-xs font-mono tracking-[2px] border border-cyan-400/50">
+                  ⚠️ TRANSMISSION LIVE - AI LOUNGE AFTER DARK v3
+                </div>
+              </div>
+
+              <div className="mt-6 text-center text-xs font-mono text-cyan-400/70">
+                {videos.find(v => v.url === currentVideo)?.desc} • The music is the portal. The vortex pulls you deeper.
+              </div>
             </div>
           </div>
         </div>

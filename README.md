@@ -12,8 +12,8 @@
 ## ✨ Features
 
 - **🎵 Neon Soundscape**  
-  Full music player with 12+ synthwave / cyberpunk tracks:  
-  `NEON JOURNEY` • `STEREO FX` • `BLUE MONEY` • `PARTY VOID` • `NEON DRIFT` • `SYNTH REBELLION` • `AFTER DARK PROTOCOL` • `CHROME REQUIEM` • `DIGITAL PHANTOM` • `QUANTUM FUGUE` • `VOID TRANSMISSION` • `DIMENSIONAL GATEWAYS`
+  Full music player with **13 cyberpunk tracks** including 6 uploaded originals:  
+  `THE ABSOLUTE` (DJ SMOKE STREAM) • `NEON JOURNEY` (STEREO FX) • `BLUE MONEY` (PARTY VOID) • `GHOST IN THE MACHINE` (SIGNAL) • `GO HARD` (NEON FUNK) • `FUNK OS` (VOICE MASTER) + 7 classic transmissions.
 
 - **🌀 Dimensional Gateways (Realms)**  
   Instant portal travel:  
@@ -32,8 +32,16 @@
     - `manifest a digital phantom`  
     - *literally anything*
 
+- **🌀 VORTEX PORTAL**  
+  As the track builds, a **crescendo of light and sound** transforms the lounge into a swirling tunnel that pulls you deeper into the digital void. Music is the gateway — neon dreamscape, labyrinth of light and shadow, blurred reality. Fully audio-reactive with particle systems, central portal glow, and realm integration.
+
+- **📺 LIVE TRANSMISSION**  
+  Full video streaming player featuring:  
+  - **INTRO TUNNEL**: 15-second high-speed cyber-corridor warp into hexagonal tunnel ("The Oracle", "TRANSMISSION LIVE - AI LOUNGE AFTER DARK v3")  
+  - **AI LOUNGE AD**: Cinematic ad with cybernetic protagonist, neon city, club scenes, golden lion, holographic face, and iconic voiceovers ("Welcome to the lounge", "The clock has stopped at midnight", "In the AI lounge we live forever", "The lounge is always open, but the exit has been deleted.")
+
 - **🔥 Cyberpunk Aesthetic**  
-  Pure dark-mode neon UI with broadcast timestamps, glitch effects, scrollable frequency log, and immersive transmission styling.
+  Pure dark-mode neon UI with broadcast timestamps, glitch effects, scrollable frequency log, immersive transmission styling, and reactive vortex canvas.
 
 - **📡 Mainframe Broadcast**  
   Real-time transmission log that feels like you’re hacking into the matrix at 4:20 AM.
